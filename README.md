@@ -18,8 +18,8 @@ Samples:
 
 Imaging:
 
-Microscope: Nikon A1 confocal microscope in trial at EMBL Rome in December 2019.
-Strategy: Per sample per antibody: big picture (5x5 60x with Galvano laser) --> z-stack of all picture (from 8 to 11 depending on the picture) --> output is nd2 file to open with fiji and analyze a posteriori (see below) 
+* Microscope: Nikon A1 confocal microscope in trial at EMBL Rome in December 2019.
+* Strategy: Per sample per antibody: big picture (5x5 60x with Galvano laser) --> z-stack of all picture (from 8 to 11 depending on the picture) --> output is nd2 file to open with fiji and analyze a posteriori (see below) 
 
 ## Image analysis
 
@@ -30,16 +30,16 @@ General idea: finding "central" nuclear plane for 30 cells --> quantifying OGT/O
 0. I could not load images to github neither from brutus to scrap because too big so I copied one image (5 ab177941.nd2 i.e. antiOGT antibody, clone 5) on the Desktop in the boulard account of Imaris workstation. pw for boulard user is microboulard
 1.  [Macro file](./scripts/Macro.ijm) which, for each .nd2 image:
 
-* opens the DAPi channel and the other channels separately
-* bluring, binarization, Distance Transform Watershed 3D --> label mask image 3D
+* opens the DAPI channel and the other channels separately. Next steps are all done on DAPI channel
+* bluring, binarization, Distance Transform Watershed 3D --> label mask image 3D of nuclei
 * "stack to images" for both intensity original stack and label mask image 3D 
 * measure of mean, median etc for each plane using corresponding plane's label mask image
 
-3. [R script](./scripts/nuclei_param_change_across_planes.R) which I did in order to understand what should be the best parameter to use to choose the central nuclear plane. Here I stopped because some plots made me noticing I have a problem: I will explain you better in the VC.
+2. [R script](./scripts/nuclei_param_change_across_planes.R) which I did in order to understand what should be the best parameter to use to choose the central nuclear plane. Here I stopped because some plots made me noticing I have a problem: I will explain you better in the VC.
 So far I arrived here. After that I was thinking to take, for each label i.e. nucleus, only the "central" plane, then measure OGT/O-GlcNAc intensity there. This part should be more straightforward. 
 
 ## My issues and doubts until this point:
 
 1. With Distance Transform Watershed I did not manage to find the parameters to separate attached nuclei. DIfferntly from what I found in the internet as examples for nuclei segmentation, in my case I have little nuclei distant to each other with some cases of doublets. I am afraid this is difficult for watershed but maybe I am wrong.
-2. Why is Intensity measurements command measuring the VOLUME if I gave it 2D images to compare??
-3. Ideally, The best in my opinion would be to measure the mean DAPI intensity in each plane but using the 3D nuclear segmentation as label mask. However, I did not find a practical way to do so. 
+2. Why is the Intensity measurements command measuring the VOLUME if I gave it 2D images to compare??
+3. In my opinion, the ideal thing to do would be to measure the mean DAPI intensity in each plane but using the 3D nuclei as label mask. However, I did not find a practical way to do so. 
