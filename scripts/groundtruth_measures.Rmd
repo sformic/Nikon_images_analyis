@@ -1,0 +1,174 @@
+---
+title: "Building a groundtruth of measures"
+author: "Sara Formichetti"
+date: "April 13th, 2020"
+output: html_document
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(autodep = TRUE, echo = FALSE, warning = FALSE, message = FALSE, results = 'hide')
+```
+
+## Building the table of measurements
+
+By using ImageJ manual selection of areas and analyze-->measure command, I made a "groundtruth" measurements' table for images "5 ab177941" and "8 ab177941". In details, for each sample I cropped several sub-images and measured:
+
+* both channels
+  + in rectangular or polygonal areas drawn manally inside DAPI area for ~10 nuclei per sample
+  + for all planes
+  
+**I choose the nuclei based on the fact that the nucleus is not overlapped with some other cell's cytoplasmic extensions and the cell is quite flat** (i.e. at least in the area selected, DAPI staining shrinkens towards the centre while going to upper planes). 
+
+The following correlation plot is a simple sanity check to make sure that the intensity measured are not correlated with the area of the rectangle/polygon drawn.
+
+```{r reading manual measurements table}
+library(data.table)
+library(ggplot2)
+
+## reading "groundtruth" measurements' table
+rect_measures_table <- fread("/home/sara/PhD/OGT_NLS_project/Nikon_images_analysis/manual_meas_for_groundtruth_table/5_8_ab177941_DAPI_OGT_nuclei.csv")
+
+## corr plot as sanity check to check that intensity measures are not correlated with area of rectangle drawn
+library(PerformanceAnalytics)
+chart.Correlation(rect_measures_table[, .(Mean, Max, Min, Area)])
+
+## transfering measures for channel 1 to other columns
+rect_measures_table_2 <- do.call("cbind", split(rect_measures_table, by = "Channel"))
+names(rect_measures_table_2) <- gsub(x = names(rect_measures_table_2), pattern = "0\\.", replacement = "DAPI_")
+names(rect_measures_table_2) <- gsub(x = names(rect_measures_table_2), pattern = "1\\.", replacement = "OGT_")
+names(rect_measures_table_2) <- gsub(x = names(rect_measures_table_2), pattern = "OGT_Sample", replacement = "Sample")
+rect_measures_table_2[, c("DAPI_Sample","DAPI_Channel", "OGT_Channel"):=NULL]
+
+## adding column for plane (sample 5 was a stack of 9 planes, sample 8 a stack of 7 planes)
+rect_measures_table_2$Plane <- c(rep(1:9, 10), rep(1:7, 8))
+```
+
+### Plotting DAPI mean intensity across planes
+
+```{r DAPI mean across planes}
+## plotting DAPI Mean across planes
+ggplot(data = rect_measures_table_2[Sample == 5]) +
+  geom_line(aes(x = Plane, y = DAPI_Mean, group = as.character(DAPI_Nucleus), colour = as.character(DAPI_Nucleus))) +
+  ggtitle("Sample 5") +
+  guides(colour=guide_legend(title="nucleus"))
+ggplot(data = rect_measures_table_2[Sample == 8]) +
+  geom_line(aes(x = Plane, y = DAPI_Mean, group = as.character(DAPI_Nucleus), colour = as.character(DAPI_Nucleus))) +
+  ggtitle("Sample 8") +
+  guides(colour=guide_legend(title="nucleus"))
+```
+
+As expected, all nuclei show a bell shaped curve of DAPI Mean intensity across planes. 
+
+The different bells are not aligned because their position along the x axis depends on the position of the corresponding cell in the big stiched image.
+
+### Plotting ab177941 mean intensity across planes
+
+```{r OGT mean across planes}
+## plotting DAPI Mean across planes
+ggplot(data = rect_measures_table_2[Sample == 5]) +
+  geom_line(aes(x = Plane, y = OGT_Mean, group = as.character(DAPI_Nucleus), colour = as.character(DAPI_Nucleus))) +
+  ggtitle("Sample 5") +
+  guides(colour=guide_legend(title="nucleus"))
+ggplot(data = rect_measures_table_2[Sample == 8]) +
+  geom_line(aes(x = Plane, y = OGT_Mean, group = as.character(DAPI_Nucleus), colour = as.character(DAPI_Nucleus))) +
+  ggtitle("Sample 8") +
+  guides(colour=guide_legend(title="nucleus"))
+```
+
+```{r creating DAPI-relative plane}
+## creating a "real_plane" which is ordered according to DAPI Mean intensity
+#rect_measures_table_2 <- rect_measures_table_2[order(Sample, DAPI_Nucleus, DAPI_Mean)]
+#rect_measures_table_2$DAPI_plane <- c(rep(1:9, 10), rep(1:7, 8))
+```
+
+The curves make sense according to what I inspected visually in the selected nuclei: ab177941 intensity obviously increases with the cell getting in focus but it is not necessarily higher when DAPI is at its highest intensity (usually it reaches the peak one plane before DAPI). 
+
+Furthermore, ab177941 stains more the cytosol than the nucleus, thus lower and upper planes can get fluorescence also from the bottom cytoplasmatic side of the cell or from the cytosol sitting on top of the nucleus.
+
+Based on the previous sentence, we should also expect to have increases in ab177941 fluorescence also at the extremities of the cell i.e. far from the nuclear peak. However, the planes precisely corresponding to bottom and upper limit of the cell are rarely captured because the stacks are composed of a few slides compared to the area of the whole imaged (that is composed by many smaller ones stiched together). In fact, the aim of the z-stack for the big whole image was to capture the DAPI highest plane for enough cells to allow a differential measure between wt and mutant samples. The aim was not obtaining an exaustive 3D picture of the fluorescence in the cells.
+
+## Measuring the difference in ab177941 mean intensity in the nucleus between the two samples
+
+### Using only the plane corresponding to the highest DAPI mean intensity
+
+It is difficult to assess whether the data are normally distributed with such a small sample size (even if they should be << CHECK WITH ALVARO!). Thus, I perform both a non-paired two samples t-test and a Wilcoxon test. I use 'two-sided' as alternative hypothesis. 
+
+```{r analysis of differential intensity, results = "markup"}
+# for each nucleus, selecting only the row corresponding to the plane showing the highest DAPI mean intensity
+rect_measures_table_2[, max_DAPI_Mean := max(DAPI_Mean), by = .(DAPI_Nucleus, Sample)]
+rect_measures_table_hDAPI <- rect_measures_table_2[DAPI_Mean == max_DAPI_Mean]
+
+t.test(x = rect_measures_table_hDAPI[Sample == 5, OGT_Mean], y = rect_measures_table_hDAPI[Sample == 8, OGT_Mean],
+       alternative = "two.sided",
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+
+wilcox.test(x = rect_measures_table_hDAPI[Sample == 5, OGT_Mean], y = rect_measures_table_hDAPI[Sample == 8, OGT_Mean], alternative = "two.sided")
+```
+
+### Using the mean of ab177941 mean intensity across all planes
+
+```{r analysis of differential intensity 2, results = "markup"}
+# computing mean of OGT mean intensity for each nucleus
+mean_OGT_table <- rect_measures_table_2[, .(mean_OGT_Mean = mean(OGT_Mean)), by = .(DAPI_Nucleus, Sample)]
+t.test(x = mean_OGT_table[Sample == 5, mean_OGT_Mean], y = mean_OGT_table[Sample == 8, mean_OGT_Mean],
+       alternative = "two.sided",
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+
+wilcox.test(x = mean_OGT_table[Sample == 5, mean_OGT_Mean], y = mean_OGT_table[Sample == 8, mean_OGT_Mean], alternative = "two.sided")
+```
+
+### Using ab177941 mean intensities of all planes
+
+```{r analysis of differential intensity 3, results = "markup"}
+t.test(x = rect_measures_table_2[Sample == 5, OGT_Mean], y = rect_measures_table_2[Sample == 8, OGT_Mean],
+       alternative = "two.sided",
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+
+wilcox.test(x = rect_measures_table_2[Sample == 5, OGT_Mean], y = rect_measures_table_2[Sample == 8, OGT_Mean], alternative = "two.sided")
+```
+
+## Groundtruth intensities in the cytosol
+
+There is the possibility that the difference in the nuclear intensities of ab177041 are due to a higher intensity in the whole stained sample. Thus, I build another table of measurements as follows:
+
+for each sample, for the same crops used for manual measurement of nuclear intensities and for the same selected cells, I measure:
+
+* ab177941 channel
+  + in polygonal areas drawn manally outside the nucleus, in the region close to the nuclear membrane; by visual inspection, I observe that this region shows - for almost every selected cell - the highest mean intensity one plane before the one corresponding to DAPI highest mean intensity
+  + for all planes
+  
+* I exlude cells number 5 for both samples because they are the sister of another closed cell i.e. they have just undergone a cell division and the cytosol is still ~shared.
+
+```{r reading cytosol manual measurements table}
+cyto_measures_table <- fread("/home/sara/PhD/OGT_NLS_project/Nikon_images_analysis/manual_meas_for_groundtruth_table/5_8_ab177941_OGT_cytosol.csv")
+
+## corr plot as sanity check to check that intensity measures are not correlated with area of rectangle drawn
+library(PerformanceAnalytics)
+chart.Correlation(cyto_measures_table[, .(Mean, Max, Min, Area)])
+
+## adding column for plane (sample 5 was a stack of 9 planes, sample 8 a stack of 7 planes)
+cyto_measures_table$Plane <- c(rep(1:9, 9), rep(1:7, 7))
+```
+
+### Plotting ab177941 mean intensities in the cytosol
+
+I use only the plane corresponding to the highest ab177941 mean intensity in the cytosolic table.
+
+```{r OGT mean in cytosol}
+# for each cell, selecting only the row corresponding to the plane showing the highest mean intensity
+cyto_measures_table[, max_Mean := max(Mean), by = .(Nucleus, Sample)]
+cyto_measures_table_h <- cyto_measures_table[Mean == max_Mean]
+
+ggplot(data = cyto_measures_table_h) +
+  geom_violin(aes(factor(Sample), Mean)) +
+  xlab("Sample")
+```
+
+Sample 8 shows higher values than sample 5 also in the cytosol!
+
+WHAT SHOULD I DO?
+
+

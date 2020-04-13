@@ -48,6 +48,9 @@ library(PerformanceAnalytics)
 chart.Correlation(to_plot[, .(Mean, Max, Median, Mode, StdDev, Volume)])
 
 ### This two plots show the problem: since the mean is computed inside the "plane piece" of the 3D nucleus and this peace is smaller where the nucleus is less visible, the mean changes too.
+ggplot(data = to_plot) +
+  geom_line(aes(x = plane, y = Max, group = as.character(Label), colour = as.character(Label))) +
+  labs(colour = "Label")
 ggplot(data = ciao[Label == 41]) +
   geom_line(aes(x = plane, y = Volume, group = as.character(Label), colour = as.character(Label))) +
   labs(colour = "Label")
