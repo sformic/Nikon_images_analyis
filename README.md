@@ -23,17 +23,14 @@ Imaging:
 
 ## Image analysis
 
-General idea: finding "central" nuclear plane for 30 cells --> quantifying OGT/O-GlcNAc fluorescence at that plane --> checking statistically significant difference between wt and mutant MEFs
+General idea: finding "central" nuclear plane for 30 cells --> quantifying OGT/O-GlcNAc fluorescence at that plane --> checking statistically significant difference between wt and mutant MEFs.
+Controlling for generalized (i.e. both in cytosol and nucleus) staining difference between wt and mutant sample by comparing intensities in the cytosolic areas. 
 
 ### Practical steps
 
 0. I could not load images to github neither from brutus to scrap because too big so I copied one image (5 ab177941.nd2 i.e. antiOGT antibody, clone 5) on the Desktop in the boulard account of Imaris workstation. pw for boulard user is microboulard
-1.  [Macro file](./scripts/Macro.ijm) which, for each .nd2 image:
 
-* opens the DAPI channel and the other channels separately. Next steps are all done on DAPI channel
-* bluring, binarization, Distance Transform Watershed 3D --> label mask image 3D of nuclei
-* "stack to images" for both intensity original stack and label mask image 3D 
-* measure of mean, median etc for each plane using corresponding plane's label mask image
+1.  [Macro file](./scripts/Macro_2.ijm) - this is very different from previous one and it is based on last suggestions by Alvaro
 
 2. [R script](./scripts/nuclei_param_change_across_planes.R) which I did in order to understand what should be the best parameter to use to choose the central nuclear plane. Here I stopped because some plots made me noticing I have a problem: I will explain you better in the VC.
 So far I arrived here. After that I was thinking to take, for each label i.e. nucleus, only the "central" plane, then measure OGT/O-GlcNAc intensity there. This part should be more straightforward. 

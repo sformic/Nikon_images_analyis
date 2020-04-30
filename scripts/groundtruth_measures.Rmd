@@ -11,7 +11,7 @@ knitr::opts_chunk$set(autodep = TRUE, echo = FALSE, warning = FALSE, message = F
 
 ## Building the table of measurements
 
-By using ImageJ manual selection of areas and analyze-->measure command, I made a "groundtruth" measurements' table for images "5 ab177941" and "8 ab177941". In details, for each sample I cropped several sub-images and measured:
+By using ImageJ manual selection of areas and analyze --> measure command, I made a "groundtruth" measurements' table for images "5 ab177941" and "8 ab177941". In details, for each sample I cropped several sub-images and measured:
 
 * both channels
   + in rectangular or polygonal areas drawn manally inside DAPI area for ~10 nuclei per sample
@@ -169,6 +169,6 @@ ggplot(data = cyto_measures_table_h) +
 
 Sample 8 shows higher values than sample 5 also in the cytosol!
 
-WHAT SHOULD I DO?
+In this case, it is just not possible to claim anything about the difference in the nucleus. I can claim something only in the case when I would observe no difference in the cytotol or a difference going in opposite direction than nuclei.
 
 
