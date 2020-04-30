@@ -28,15 +28,10 @@ Controlling for generalized (i.e. both in cytosol and nucleus) staining differen
 
 ### Practical steps
 
-0. I could not load images to github neither from brutus to scrap because too big so I copied one image (5 ab177941.nd2 i.e. antiOGT antibody, clone 5) on the Desktop in the boulard account of Imaris workstation. pw for boulard user is microboulard
+0. [Rmd that uses manual measures](./scripts/groundtruth_measures.Rmd) inside manually drawn areas to verify that the strategy of measuring ch1 at the plane with highest DAPI intensity makes sense. Download the relative html to see outcomes and plots.
 
-1.  [Macro file](./scripts/Macro_2.ijm) - this is very different from previous one and it is based on last suggestions by Alvaro
+1.  [Macro file](./scripts/Macro_2.ijm), which should be commented enough to understand all steps and rationales. This Macro is very different from [the initial one](./scripts/Macro.ijm) and it is based on last suggestions by Alvaro.
 
-2. [R script](./scripts/nuclei_param_change_across_planes.R) which I did in order to understand what should be the best parameter to use to choose the central nuclear plane. Here I stopped because some plots made me noticing I have a problem: I will explain you better in the VC.
-So far I arrived here. After that I was thinking to take, for each label i.e. nucleus, only the "central" plane, then measure OGT/O-GlcNAc intensity there. This part should be more straightforward. 
+2. [R script](./scripts/ch_at_best_nuclear_plane.R) that uses all tables output by the Macro_2 algorithm and test statistical significance of difference of ch1 nuclear intensity between wt and mutant MEFs for all antibodies in folder smb://brutus.embl.it/boulard/Sara/Julia/Data/confocal/191216 Sara-Julia Nikon A1.
 
-## My issues and doubts until this point:
-
-1. With Distance Transform Watershed I did not manage to find the parameters to separate attached nuclei. DIfferntly from what I found in the internet as examples for nuclei segmentation, in my case I have little nuclei distant to each other with some cases of doublets. I am afraid this is difficult for watershed but maybe I am wrong.
-2. Why is the Intensity measurements command measuring the VOLUME if I gave it 2D images to compare??
-3. In my opinion, the ideal thing to do would be to measure the mean DAPI intensity in each plane but using the 3D nuclei as label mask. However, I did not find a practical way to do so. 
+The final plots resulting from the analysis are in [this folder](./scripts/images).

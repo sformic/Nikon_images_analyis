@@ -64,7 +64,7 @@ dev.off() ##Note: the 'main' parameter does not work i.e. there are no titles in
 
 # some plotting on each sample table in order to understand and check relationship between measurements
 plot_some_meas <- function (t) {
-  pdf(file = paste0("/home/sara/PhD/OGT_NLS_project/Nikon_images_analysis/scripts/images/corr_nuclei_ch0_ch1_", unique(t$sample),".pdf"), onefile = TRUE)
+  pdf(file = paste0("/home/sara/PhD/OGT_NLS_project/Nikon_images_analysis/scripts/images/distrib_ch0_ch1_", unique(t$sample),".pdf"), onefile = TRUE)
   # for each nucleus, computing the highest DAPI mean intensity across planes
   t[, max_DAPI_Mean := max(Mean_DAPI), by = .(Label)]
   hist(t$max_DAPI_Mean, xlab = "max DAPI mean intensity", main = "")
